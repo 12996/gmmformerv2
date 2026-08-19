@@ -1,0 +1,40 @@
+# Official clones — never commit as this repo's source
+papers/*/vendor/
+
+# Paper binaries and local dumps
+*.pdf
+*.PDF
+
+# Data, weights, experiment dumps
+datasets/
+data/
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.safetensors
+wandb/
+runs/
+lightning_logs/
+mlruns/
+outputs/raw/
+
+# Python / env
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
+
+# Per-agent local bridges (this repo does not use them)
+.claude/
+.grok/
+.agent/
+.codex/
