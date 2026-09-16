@@ -1,0 +1,24 @@
+E3 已按上一轮闸门停训，需要你拍板：这是交叉模态还没学会、该放行把同一实验训完，还是换文本没有早期信号、E3 记失败。一次只改一个决定，不要开新变量。
+
+## 闸门来源（可能用错对象）
+上一轮对 **CLIP 视觉 + CLIP 文本** 规定：首个 val SumR ≤10.2 视为随机失败停。随机对照约 8.7（1334 视频，SumR=R@1+5+10+100）。
+这次 E3 是 **CLIP 视觉 + RoBERTa 文本**，空间一开始不对齐。子 agent 仍用了 ≤10.2 闸门，SIGTERM。
+
+## E3 实测（未训完，不是 Early Stop）
+- 主机 5090_1 GPU6，seed 9527，batch 128，visual_feature=clip 512-d，q_feat_size=1024，文本 `roberta_charades_query_feat.hdf5`（E1 同一份），视觉 `charades_clip_L14.h5`
+- CPU 检查：ntrain 5338 / val text 3720 / val video 1334；batch visual 512、text 1024
+- epoch 0：R@1/5/10/100 = 0.0 / 0.6 / 0.9 / 8.6，**SumR 10.1**，loss 2.42
+- epoch 1：0.1 / 0.5 / 0.7 / 7.4，**SumR 8.7**（Relative Failure，loss 1.72 在降）
+- 16:26:33–16:28:58，exit 143 SIGTERM。无 OOM。wangwen 预占仍在。
+
+## 对照
+- E2 CLIP+CLIP 投影：epoch 0 已是 **15.1**，随后涨到 Best **68.0**
+- E1 I3D+RoBERTa 实测：epoch 0 SumR **10.5**，epoch 1 **14.7**（上涨），后来 Best **78.4**
+- 随机：约 8.7
+
+## 请你做的
+1. 10.2 闸门是否只适用于同空间 CLIP-CLIP，E3 交叉模态不适用？
+2. epoch 0=10.1、epoch 1=8.7（指标掉、loss 降）更像：还没学会投影、配对/mask 有问题、还是该立刻判 E3 失败？
+3. 只锁一个动作：A 放行同一 E3 从头或 resume 训到 Early Stop（仍 CLIP vis + RoBERTa，不改别的）；B 记 E3 失败，改下一变量（你必须点名是哪一个）；C 先做一项不训练的检查（你必须点名查什么）。
+4. 用恰好 5 条编号共识，每条一行。最后一条必须是下一动作：改什么/固定什么/成功失败怎么读。
+5. CLIP/混合特征数字仍禁止进 Table 1。
