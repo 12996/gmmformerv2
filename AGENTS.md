@@ -15,10 +15,22 @@ Follow (highest first): system/developer/user request → this file → nearest 
 After a GPT-6 (ChatGPT 6 Pro) discussion that picks the next fork:
 
 1. Parent records the consensus in `papers/<slug>/experiments/方向探索日志.md` (question, GPT-6 conclusion, one-variable plan, how to read the outcome). One experiment per entry.
-2. Parent **spawns a subagent** to run that experiment. Do not mix the discussion turn with the implementation.
-3. When the subagent finishes, **the parent** fills the same entry with the work log and measured results (commands, metrics vs baseline/paper, evidence paths, next fork). Do not leave the entry as in-progress.
+2. Parent **spawns a subagent** to run that experiment. Parent coordinates; do not mix the discussion turn with the implementation.
+3. If the plan or a runtime surprise looks wrong, parent discusses with GPT-6 again before changing the locked gate. Do not invent a second variable in the same entry.
+4. When the subagent finishes, **the parent** fills the same entry with the work log and measured results (commands, metrics vs baseline/paper, evidence paths, next fork). Then **git-commit** that log (see Git). Do not leave the entry as in-progress.
 
 Do not change more than one variable per entry. Keep claims tied to numbers; this log is not a notes vault.
+
+## Git (local is canonical)
+
+There are multiple lab GPUs (`5090` = 202.207.1.22 / ZRS-326V2; `5090_1` = 202.207.1.21 / P6X8G). Servers are compute only. **This repo on the laptop (`F:\论文`) is the project of record** so work can move between machines.
+
+- Commit on the laptop after: a consensus, a finished experiment entry, a new patch/script, or a status freeze. Prefer small, complete-sentence messages.
+- Always track: `PAPER.md` / `SETUP.md` / `VERIFY.md` / `ADAPT.md`, `experiments/方向探索日志.md`, `experiments/工作状态.md`, extract/patch/launch scripts, metric JSON that fits in git.
+- Never track: `vendor/`, conda/env, large h5/ckpt, secrets, SSH passwords. Mirror vendor patches as **scripts in `experiments/`**, not as copies of the whole tree.
+- Do not treat a server home/`/data` tree as backup. After a server run, copy numbers and tiny logs into `experiments/` and commit; leave weights/data on the server.
+- Do not `git push` unless the user asks. Do not amend. Do not revert unrelated dirty files. Leave unrelated skill/`README` edits unstaged.
+- Before sleeping or switching hosts: update `工作状态.md`, commit the log snapshot, note which host/path the next train should use.
 
 ## Scope and safety
 
