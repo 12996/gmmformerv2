@@ -8,7 +8,7 @@ import sys
 import time
 
 HOST = "5090_1"
-POLL_S = 60
+POLL_S = 20
 MAX_WAIT_S = int(os.environ.get("E2_GPU_WAIT_S", str(40 * 60)))
 SEED = "9527"
 ROOT = "/data/zhaopu/wang-2024-gmmformer-v2"
@@ -16,7 +16,17 @@ ROOT = "/data/zhaopu/wang-2024-gmmformer-v2"
 
 def ssh(cmd: str, timeout: int = 40) -> subprocess.CompletedProcess:
     return subprocess.run(
-        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", HOST, cmd],
+        [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "ConnectTimeout=15",
+            "-o",
+            "ServerAliveInterval=5",
+            HOST,
+            cmd,
+        ],
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -105,30 +115,31 @@ def already_running() -> str:
 def launch(gpu: str) -> str:
     remote = (
         "set -euo pipefail; "
-        "ROOT=%s; "
-        "GPU=%s; "
-        "SEED=%s; "
+        "ROOT=%s; GPU=%s; SEED=%s; "
         "mkdir -p \"$ROOT/logs/runs/e2_seed${SEED}_gpu${GPU}\" \"$ROOT/logs\"; "
         "nohup \"$ROOT/run_cha_e2_gpu.sh\" \"$GPU\" \"$SEED\" "
         "> \"$ROOT/logs/runs/e2_seed${SEED}_gpu${GPU}/launcher.out\" 2>&1 & "
         "echo LAUNCHER_PID=$!; "
-        "sleep 5; "
-        "echo '==== pid file ===='; "
-        "cat \"$ROOT/logs/runs/e2_seed${SEED}_gpu${GPU}/pid\"; "
-        "echo '==== run.json ===='; "
-        "cat \"$ROOT/logs/runs/e2_seed${SEED}_gpu${GPU}/run.json\" || true; "
-        "echo '==== ps ===='; "
-        "ps -u zhaopu -o pid,ppid,cmd | grep -E 'main.py -d cha|run_cha_e2_gpu' | grep -v grep || true; "
-        "echo '==== PRVR_ROOT exists ===='; "
-        "ls -ld \"$ROOT/tmp/clip_e2_seed${SEED}\" \"$ROOT/tmp/i3d_tc_seed${SEED}\" \"$ROOT/tmp/i3d_seed${SEED}\"; "
-        "echo '==== occupancy after launch ===='; "
-        "python3 \"$ROOT/experiments/e2_gpu_occupancy.py\""
+        "sleep 2; "
+        "cat \"$ROOT/logs/runs/e2_seed${SEED}_gpu${GPU}/pid\" 2>/dev/null || true; "
+        "ps -u zhaopu -o pid,cmd | grep -E 'main.py -d cha|run_cha_e2_gpu' | grep -v grep || true"
     ) % (ROOT, gpu, SEED)
-    r = ssh(remote, timeout=60)
-    out = (r.stdout or "") + (r.stderr or "")
-    if r.returncode != 0:
-        raise RuntimeError("launch rc=%s\n%s" % (r.returncode, out))
-    return out
+    last = ""
+    for i in range(1, 6):
+        try:
+            r = ssh(remote, timeout=45)
+        except Exception as e:
+            last = "attempt %s timeout %s" % (i, e)
+            print("LAUNCH_RETRY", last, flush=True)
+            time.sleep(3)
+            continue
+        out = (r.stdout or "") + (r.stderr or "")
+        if r.returncode == 0:
+            return out
+        last = "attempt %s rc=%s\n%s" % (i, r.returncode, out)
+        print("LAUNCH_RETRY", last[:300], flush=True)
+        time.sleep(3)
+    raise RuntimeError("launch failed after retries\n%s" % last)
 
 
 def main() -> int:
@@ -137,22 +148,24 @@ def main() -> int:
     n = 0
     extract_ok = False
     h5_installed = False
+    cfg_ok = False
     while True:
         n += 1
         elapsed = time.time() - t0
-        try:
-            est = extract_status()
-        except Exception as e:
-            print("POLL %s EXTRACT_FAIL elapsed=%.0fs %s" % (n, elapsed, e), flush=True)
-            est = ""
         print("POLL %s elapsed=%.0fs" % (n, elapsed), flush=True)
-        if est:
-            print(est, flush=True)
-        if "TRACEBACK True" in est:
-            print("BLOCKED extract traceback", flush=True)
-            return 1
-        if "EXTRACT_OK True" in est:
-            extract_ok = True
+        if not extract_ok:
+            try:
+                est = extract_status()
+            except Exception as e:
+                print("EXTRACT_FAIL", e, flush=True)
+                est = ""
+            if est:
+                print(est, flush=True)
+            if "TRACEBACK True" in est:
+                print("BLOCKED extract traceback", flush=True)
+                return 1
+            if "EXTRACT_OK True" in est:
+                extract_ok = True
         if extract_ok and not h5_installed:
             print("INSTALL_PROJ_H5", flush=True)
             try:
@@ -163,6 +176,14 @@ def main() -> int:
             h5_installed = True
             gpu_t0 = time.time()
             print("GPU_WAIT_START", flush=True)
+        if extract_ok and h5_installed and not cfg_ok:
+            try:
+                print("CFG_CHECK", flush=True)
+                print(clip_cfg_ok(), flush=True)
+                cfg_ok = True
+            except Exception as e:
+                print("CFG_FAIL", e, flush=True)
+                return 1
         try:
             text = occupancy()
         except Exception as e:
@@ -171,18 +192,7 @@ def main() -> int:
         if text:
             print(text, flush=True)
         cands = parse_candidates(text) if text else []
-        if extract_ok and h5_installed and cands:
-            try:
-                print("CFG_CHECK", flush=True)
-                print(clip_cfg_ok(), flush=True)
-            except Exception as e:
-                print("CFG_FAIL", e, flush=True)
-                return 1
-            ar = already_running()
-            if ar and "main.py -d cha" in ar:
-                print("SKIP_ALREADY", flush=True)
-                print(ar, flush=True)
-                return 0
+        if extract_ok and h5_installed and cfg_ok and cands:
             gpu = cands[0]
             print("LAUNCH gpu=%s seed=%s" % (gpu, SEED), flush=True)
             print(launch(gpu), flush=True)
