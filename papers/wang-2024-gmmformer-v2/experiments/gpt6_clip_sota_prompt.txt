@@ -1,0 +1,14 @@
+请作为 PRVR 实验审稿人，只根据证据判断。目标：在 GMMFormer v2 上用 CLIP 线超过原论文 I3D 数字；若可能，再谈怎样才算超 SOTA。不要空泛鼓励，把「超过原论文」和「超过当前 SOTA」分开。
+
+我们已有：
+1) 官方 Table 1 Charades-STA I3D+RoBERTa：2.5/8.6/13.9/53.2/SumR 78.2。我们修了老师 zip 里 DyGMMBlock 的 mean 覆盖后，同一套 A3PRVR I3D + 自抽 RoBERTa、seed 9527，得到 2.4/8.8/14.2/53.0/SumR 78.4。Charades I3D 线已贴上论文，不要再为 0.2 分调参。
+2) 老师 zip ActivityNet CLIP-L/14 日志 Best SumR 197.1（远高于论文 I3D 的 154.9）。说明 CLIP 骨干可以大幅超过论文 I3D 表。
+3) 我们 Charades CLIP 失败：视觉用 A3PRVR clip_feat (CLIP-B/32, 512-d)，文本用 open_clip ln_final token、没乘 text_projection。冻结 mean-pool 检索 Rsum 8.55（随机，正样本余弦=全体均值）。训练后 SumR 9.6 仍随机。
+4) 文献对照（不同设定，不能直接当同一张表）：A3PRVR 双流 I3D+CLIP-B/32 + RoBERTa 在 Charades SumR 82.3；CVPR 2026 DreamPRVR 在 I3D 设定 Charades SumR 80.0、ActivityNet 156.1、TVR 193.1。GMMFormer+某插件有过 Charades 82.9（需核设定）。CLIP4Clip 等 T2VR 在 Charades PRVR 协议下只有 ~63。
+
+请明确回答：
+A) 只修 Charades CLIP 的 text_projection（文本进 CLIP 空间）、保持 GMMFormer v2 + 已修的 TC、seed 9527，是否合理预期 SumR 明显高于 78.2？给可检验的下限/失败条件（例如冻结 CLIP 检索仍随机则停止）。
+B) 这算超过原论文，还是必须同时报「CLIP-B/32 vs I3D」才能发？ActivityNet 老师 197 是否足以支持「CLIP 线可超论文 I3D」？
+C) 若目标是超当前 PRVR SOTA 而不仅是超 GMMFormer v2 的 78.2，CLIP-B/32 单流够不够？要不要上 CLIP-L/14、I3D+CLIP 双流、或更强文本？最小实验序列是什么（一次一个变量）？
+D) 不要做的事：和 Table 1 I3D 混报；没修好投影就训；同时改骨干和损失。
+E) 下一步最小动作（一条）。

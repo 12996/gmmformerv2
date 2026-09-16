@@ -1,0 +1,24 @@
+请作为论文复现审稿人，只根据下面证据判断：GMMFormer v2 在 Charades-STA 上 SumR 73.5 vs 论文 78.2，差 4.7 分，主因是什么。不要空泛鼓励。
+
+论文（arXiv 2405.13824）Table 1 Charades-STA：R@1/5/10/100/SumR = 2.5 / 8.6 / 13.9 / 53.2 / 78.2。官方代码 https://github.com/huangmozhi9527/GMMFormer_v2 。特征来自 MS-SL：I3D RGB LGI + 1024-d RoBERTa。超参：seed 9527, batch 128, Adam lr 2e-4, 100 epoch, early stop 10。
+
+我们实测（I3D+RoBERTa 重训，seed 9527，Early Stop epoch 48）：2.4 / 7.6 / 13.3 / 50.2 / 73.5。对照 seed 9528：SumR 74.3。训练曲线健康：epoch0 SumR 11.6 → ep10 59.2 → ep48 73.5，之后连续10次 Failure 停。epoch20 开 hard negative，loss 从 0.80 跳到 1.48 后分数仍涨。R@1 只差 0.1，R@100 差 3.0（占 SumR 缺口大半）。
+
+代码差异（老师 zip vs 官方 github DyGMMBlock.forward）：
+官方最后是：
+  out = torch.sum(oo * weight.unsqueeze(2).repeat(...), dim=-1)
+  return out
+老师 zip 多了一行：
+  out = torch.sum(...)
+  out = torch.mean(oo, dim=-1).squeeze()
+  return out
+即算完 TC 权重后又用 8 路 Gaussian 的 mean 覆盖，时序聚合被写废。论文 v1 Charades SumR 68.4，v2 78.2。
+
+特征差异：视觉用 A3PRVR hdf5 的 i3d_feat (T,1024)，不是 MS-SL i3d_rgb_lgi BigFile；文本是 HuggingFace roberta-large last_hidden_state、max_len=30，不是官方 roberta_charades_query_feat.hdf5。更早一轮 CLIP 视觉 + 未做 text_projection 的 CLIP 文本，冻结检索就是随机（SumR 8.55），已作废。
+
+请明确回答：
+1) 这 4.7 分更像 TC-GMM 被 mean 覆盖，还是特征包不一致，还是两者都有？给出你更确信的排序和理由。
+2) 只修 TC（删掉 mean 那行）重训，合理预期 SumR 区间？
+3) 是否必须换成 MS-SL 官方 I3D+RoBERTa 才能对上 78.2？
+4) 有没有我漏掉的更可能原因（val vs test、Dataset4PRVR 验证、硬负样本）？
+5) 下一步最小动作是什么？
