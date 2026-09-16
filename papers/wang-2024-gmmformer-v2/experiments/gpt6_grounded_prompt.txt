@@ -1,0 +1,43 @@
+新对话。之前没给你论文 PDF 和实际代码，建议会飘。请先打开并阅读论文 PDF：https://arxiv.org/pdf/2405.13824v1 （GMMFormer v2, arXiv 2405.13824）。下面是我们 **5090_1 上正在跑的源码**（teacher zip + 补丁），不是官方干净树，也不是你记忆里的别的 PRVR 方法。必须引用这些类/函数。不要展开新文献清单。一次只锁一个变量。CLIP/混合数字禁止填进论文 Table 1。
+
+## 实测 2×2（Charades-STA PRVR, seed 9527, batch 128, Early Stop 10）
+论文 T1-cha I3D+RoBERTa：2.5/8.6/13.9/53.2 / SumR **78.2**
+- E1 I3D vis + RoBERTa：**78.4**（删 DyGMMBlock 的 mean 覆盖）
+- E2 CLIP vis + CLIP token@text_projection：**68.0**
+- E3 CLIP vis + 同一份 E1 RoBERTa：**65.4**（换文本无收益）
+缺格：I3D vis + CLIP text。h5 名叫 charades_clip_L14.h5，实际是 512-d CLIP-B/32。
+
+## 实际代码（请按这个架构想下一刀）
+
+Configs/cha.py 当前是 E3：visual_feature=clip, visual_feat_dim=512, q_feat_size=1024, hidden_size=384, map_size=32, max_ctx_l=128, clip_scale_w=0.7, frame_scale_w=0.3, lr=2e-4, hard_negative_start_epoch=20, max_es_cnt=10。
+
+builder.py：
+- visual_feature in (i3d, i3d_rgb_lgi): FeatureData/charades_i3d.h5 + TextData/roberta_charades_query_feat.hdf5, dims 1024/1024, is_clip=True（走 h5 采样）
+- visual_feature==clip: FeatureData/charades_clip_L14.h5 + TextData/roberta_charades_query_feat.hdf5（E3；E2 时 text 曾是 charades_clip_L14.h5 投影 token 序列）
+
+GMMFormerV2_Net：query_input_proj / clip_input_proj / frame_input_proj 都把输入投到 hidden 384；clip_encoder=DyGMMBlock(frame_len=32)；frame_encoder_1=DyGMMBlock(frame_len=128)；query 走 BertAttention + modular_vector_mapping。
+
+DyGMMBlock.forward 现在是官方加权（E1 已删 mean 覆盖）：
+```
+weight = softmax(...)
+out = torch.sum(oo * weight.unsqueeze(2).repeat(1, 1, oo.shape[2], 1), dim=-1)
+return out
+```
+老师 zip 里曾有 `out = torch.mean(oo, dim=-1).squeeze()` 盖掉加权，删掉后 I3D 从 73.5→78.4。
+
+CLIP 文本抽取（E2，不在 vendor）：
+```
+x = token_embedding(tokens)+pos
+x = transformer(x, attn_mask=attn_mask)
+x = ln_final(x)
+x = x @ text_projection   # 整段 token，不是单 EOT
+seq = x[i, :length_i]
+```
+
+main.py：epoch>=20 开 hard negative；val SumR 不升则 es_cnt+1，>10 就 Early Stop。
+
+## 请你做的
+1. 用论文 Table 1 特征协议 + 上述 Net/DyGMMBlock/builder 解释 E1 78.4 vs E2 68.0 vs E3 65.4，不要空泛归因。
+2. 只锁一个下一实验：改哪个文件/哪条路径，固定什么，S 怎么读（vs 68.0/78.2/78.4）。
+3. 恰好 6 条编号共识，每条一行。最后一条是下一动作。
+4. 禁止把 CLIP 分写进 Table 1。禁止同时改两个变量。
