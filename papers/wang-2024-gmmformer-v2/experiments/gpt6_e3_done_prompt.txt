@@ -1,0 +1,21 @@
+E3 已按你上一条共识训完 Early Stop。请只锁下一刀（一个变量）。不要展开新文献。
+
+## 完整 2×2（Charades SumR，全部另表，禁止填 Table 1）
+- E1 I3D vis + RoBERTa text：**78.4**（Best epoch 34，贴论文 78.2）
+- E2 CLIP vis + CLIP token-投影 text：**68.0**（Best epoch 41，2.2/7.3/11.6/47.0）
+- E3 CLIP vis + 同一份 E1 RoBERTa text：**65.4**（Best epoch 71，1.6/6.6/11.5/45.6；Early Stop epoch 82，exit 0）
+- 缺格：I3D vis + CLIP text（未做）
+
+## 按你上一条闸门读 E3
+S=65.4 ≤ 68.0 → 本设置与预算下把 CLIP 文本换成 RoBERTa **无收益**（还低 2.6）。不能据此宣判 CLIP-B/32 视觉天花板。
+
+同 RoBERTa：CLIP vis 65.4 vs I3D vis 78.4（−13.0）。
+同 CLIP vis：CLIP text 68.0 vs RoBERTa 65.4（CLIP 文本略好）。
+
+E3 开局 10.1→8.7 后继续涨到 65.4，说明上次 10.2 停训确实杀早了，但换文本仍没超过 E2。
+
+## 请你做的
+1. 用 2×2 判断：E2 相对 E1 的 −10.4 更像视觉 CLIP 的问题、文本问题、还是二者交互。
+2. 只锁一个下一实验，并说明固定什么、S 怎么读。候选请排序后只选一个：I3D vis+CLIP text（补缺格）；单 EOT；L/14；分数融合 E1+E2；其它你必须点名且仍是单变量。
+3. 恰好 5 条编号共识，每条一行。最后一条是下一动作。
+4. CLIP/混合数字继续禁止进 Table 1。

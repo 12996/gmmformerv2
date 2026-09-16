@@ -1,0 +1,26 @@
+{
+  "exp": "E3",
+  "host": "5090_1",
+  "gpu": 6,
+  "pid": 3804964,
+  "exit_code": 0,
+  "seed": 9527,
+  "visual_feature": "clip",
+  "visual_feat_dim": 512,
+  "q_feat_size": 1024,
+  "text": "roberta_charades_query_feat.hdf5",
+  "prvr_root": "/data/zhaopu/wang-2024-gmmformer-v2/tmp/clip_roberta_e3_seed9527",
+  "started": "2026-09-16T16:50:56",
+  "stopped": "2026-09-16T18:14:44+08:00",
+  "reason": "Early Stop",
+  "best_epoch": 71,
+  "best": {"R@1": 1.6, "R@5": 6.6, "R@10": 11.5, "R@100": 45.6, "SumR": 65.4},
+  "stop_epoch": 82,
+  "stop_SumR": 64.1,
+  "compare": {
+    "E2_CLIP_CLIP": 68.0,
+    "E1_I3D_RoBERTa": 78.4,
+    "paper_I3D": 78.2,
+    "gate": "S<=68.0 no gain from swapping text"
+  }
+}
