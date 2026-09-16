@@ -1,0 +1,11 @@
+特征协议隔离：PDF 抓取因体积限制失败，已核对同版 HTML 正文、Table 1 和结构图；§4.1.2 明确 Charades 使用 I3D＋1024 维 RoBERTa，Table 1 为 78.2，E1 属于对应复现线；E2、E3及后续混合结果只进独立特征消融表，不能填进 Table 1。
+
+E1 的提升有具体代码机制：DyGMMBlock.forward 删除末尾 mean 覆盖，使返回值重新依赖 softmax 权重及多尺度加权和，对应论文式（2）；你报告的 73.5→78.4（＋4.9）是恢复该聚合机制后的收益，而 78.4 比 78.2 高 0.2只能视为数值贴合，不能据单种子宣称可靠超越。
+
+E2 不是直接使用原生 CLIP 图文相似度：按所贴 GMMFormerV2_Net，query_input_proj/clip_input_proj/frame_input_proj 分别投到 384 维，视觉再进 clip_encoder／frame_encoder_1 的 32／128 位置 DyGMMBlock，整段 token@text_projection 则经 BertAttention＋modular_vector_mapping 重新聚合；因此同为 CLIP 不保证原始对齐被保留，但这也不能证明投影导致掉分；这里的 clip 分支是片段分支，论文同样采用帧／片段双分支。
+
+三格只能支持条件性归因：按你给出的结果，E1→E2 同时换两端，－10.4 不可单独归因；E1→E3 固定同一 RoBERTa，换视觉特征及对应输入适配后 －13.0；E2→E3 固定 CLIP 视觉，换 RoBERTa 后 －2.6，说明此次换文本未补回差距，而非证明某文本编码器普遍更差；builder.py 的 is_clip=True 在 I3D 路径也成立，只表示采样路径，文件名 L14 也不能推翻你已核实的 B/32。
+
+唯一下一实验是缺格 E4：I3D 视觉＋E2 原样 CLIP 文本；令 S 为按相同验证集、评估器和 checkpoint 选择规则得到的最佳 SumR，则 S－68.0衡量固定 CLIP 文本时更换视觉输入的变化，S－78.4衡量固定 I3D 视觉时更换文本输入的变化，S＞78.2仅代表跨特征协议数值超过原文；即便 S＞78.4，也不是 CLIP 视觉路线的进步，更不是同协议 SOTA 结论。
+
+下一动作：以 E2 的配置为父实验，从头只跑 E4，不从当前 E3 同时换两端；在 Configs/cha.py 设 visual_feature=i3d, visual_feat_dim=1024，保持 E2 的 q_feat_size=512；在 builder.py 的 I3D 分支读取 FeatureData/charades_i3d.h5，但文本明确保留 E2 原投影 token h5 路径及全部处理，不要被默认分支切回 RoBERTa，并将传入维度对应为 1024/512、保持 is_clip=True；固定 seed 9527、batch 128、hidden 384、32／128、融合权重 0.7／0.3、lr 2e-4、全部损失及已修复 DyGMMBlock.forward，main.py 仍 epoch≥20 开 hard negative、es_cnt>10 才停，不增加提前停训闸门。
