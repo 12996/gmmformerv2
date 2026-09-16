@@ -5,11 +5,28 @@ set -euo pipefail
 GPU="${1:?gpu id}"
 SEED="${2:?seed}"
 ROOT="/data/zhaopu/wang-2024-gmmformer-v2"
+if [ "$GPU" = "2" ]; then
+  echo "NEVER_GPU2 asr" >&2
+  exit 1
+fi
 export PRVR_SEED="$SEED"
 export PRVR_ROOT="$ROOT/tmp/clip_e2_seed${SEED}"
 export PYTHONUNBUFFERED=1
 RUNDIR="$ROOT/logs/runs/e2_seed${SEED}_gpu${GPU}"
+LOCKDIR="$ROOT/logs/runs/e2_seed${SEED}.lock"
 mkdir -p "$PRVR_ROOT" "$RUNDIR" "$ROOT/logs"
+if mkdir "$LOCKDIR" 2>/dev/null; then
+  echo "$$ $GPU $(date -Is)" > "$LOCKDIR/info"
+else
+  if pgrep -u zhaopu -f "main.py -d cha" >/dev/null; then
+    echo "E2_ALREADY_RUNNING" >&2
+    exit 1
+  fi
+  echo "STALE_LOCK $LOCKDIR" >&2
+  rm -rf "$LOCKDIR"
+  mkdir "$LOCKDIR"
+  echo "$$ $GPU $(date -Is)" > "$LOCKDIR/info"
+fi
 cd "$ROOT/vendor/GMMFormer_v2/src"
 STDOUT="$RUNDIR/stdout.log"
 LN="$ROOT/logs/cha_e2_seed${SEED}_gpu${GPU}.log"
