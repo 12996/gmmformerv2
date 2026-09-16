@@ -1,0 +1,70 @@
+第二轮之后我们按你的闸门做完了 E2 训练。请基于实测数字给下一刀（一次只改一个变量）。不要再展开新文献清单。
+
+## 任务
+Charades-STA PRVR，GMMFormer v2。目标：CLIP 线冲击论文 Table 1 I3D SumR 78.2，但 CLIP 分必须另表，禁止填进 Table 1。本地 I3D 基线 E1 已贴上论文。
+
+## 已锁定事实
+- 论文 T1-cha I3D+RoBERTa：R@1/5/10/100 = 2.5 / 8.6 / 13.9 / 53.2，SumR **78.2**
+- 我们 E1（I3D+RoBERTa，删 TC mean 覆盖，seed 9527）：2.4 / 8.8 / 14.2 / 53.0，SumR **78.4**，Best epoch 34，Early Stop 45
+- 老师 ActivityNet CLIP-L/14 Best SumR **197.1** vs 论文 I3D 154.9（不外推 Charades B/32）
+- ProPy 他人复跑 GMMFormer v2+CLIP-B/32 Charades SumR **55.4**（警告，不是上限）
+- 你之前共识：不预设 B/32 必超 78.2；超过必须写清 CLIP vs I3D；E2 只补 token 序列的 text_projection，不改成单 EOT；保留已修 TC、损失、seed 9527
+
+## E2-0 闸门（已 pass，未训）
+- 视觉：A3PRVR clip_feat，h5 名 charades_clip_L14.h5，实际 512-d CLIP-B/32，6672 视频
+- 文本：open_clip ViT-B-32 openai，ln_final @ text_projection，**保留 token 序列**（strip pad），不是 EOT 单向量
+- encode_text 自检 val 3720：min cosine 0.99999964，pass
+- 冻结检索 val 1334 视频 / 3720 query，1000 次 video-ID 成组置乱：
+  - mean-video SumR 41.77 p=0.001
+  - max-frame SumR 51.05 p=0.001
+  - 旧无投影文本 Rsum 8.55（随机）
+
+## E2 训练结果（刚才跑完）
+- 主机 5090_1 GPU6，与 wangwen 1.6GB 预占共存，未杀任何人
+- `python main.py -d cha --gpu 6`，PRVR_ROOT=tmp/clip_e2_seed9527，seed 9527，batch 128，max_es_cnt=10，hard_negative 从 epoch 20 打开
+- visual_feature=clip，q_feat_size=visual_feat_dim=512，max_ctx_l=128，clip 32 / frame 128
+- 14:57:52 开训，15:54:22 Early Stop，exit 0，无 OOM/Traceback
+- 曲线 SumR：ep0 15.1 → ep19 59.5（HN 开启前）→ ep20 61.4 → ep41 **68.0 Best**（2.2 / 7.3 / 11.6 / 47.0）→ ep42–52 全是 Relative Failure，停在 66.6
+- vs E1 78.4：**−10.4**；vs 论文 78.2：**−10.2**；vs 冻结 max-frame 51.05：**+16.95**；vs ProPy 55.4：**+12.6**
+- 缺口主要在 R@10/R@100（11.6/47.0 vs E1 14.2/53.0），R@1 接近（2.2 vs 2.4）
+- 不是没学：从 15.1 学到 68.0 后平台；关掉 early stop 多跑 10 epoch 也在掉（68.0→66.6），不像“停早了”
+
+## 实现要点（我们实际跑的代码）
+文本投影（保留序列，不是 EOT）：
+```
+x = token_embedding(tokens) + positional_embedding
+x = transformer(x, attn_mask=attn_mask)
+x = ln_final(x)
+x = x @ text_projection   # 整段 token
+seq = x[i, :length_i]     # strip pad，写入 h5
+```
+loader：visual_feature=='clip' 时
+```
+visual = FeatureData/charades_clip_L14.h5
+text   = TextData/charades_clip_L14.h5   # 已被投影 h5 原子替换
+```
+DyGMMBlock TC（E1 已删 mean 覆盖，E2 沿用）：
+```
+weight = softmax(...)
+out = torch.sum(oo * weight.unsqueeze(2).repeat(...), dim=-1)
+return out
+# 老师 zip 里曾有：out = torch.mean(oo, dim=-1).squeeze() 覆盖加权，E1 删掉后 I3D 从 73.5→78.4
+```
+early stop：
+```
+if val SumR > best: es_cnt=0; save best.ckpt
+else: es_cnt += 1
+if es_cnt > max_es_cnt(10): Early Stop; exit(0)
+```
+hard negative：epoch>=20 时 criterion.cfg['use_hard_negative']=True（E1 同样如此仍到 78.4）
+
+## 请你做的
+1. 判断 68.0 相对 78.2/78.4 的主因更像：CLIP-B/32 表征天花板、视觉 clip_feat 与文本 openai B/32 不配套、token 序列 vs EOT、还是训练超参/early stop。给出证据，不要空泛。
+2. 给出 **下一个最小实验（只改一个变量）**，以及如何读结果。候选请你排序并只锁定一个：
+   - E3：CLIP 视觉 + E1 RoBERTa 文本（换文本模态）
+   - CLIP 文本改成单 EOT（你之前明确禁止当 E2；现在 E2 完了，是否值得单独做）
+   - L/14 视觉/文本
+   - 分数融合 CLIP 与 I3D
+   - 关 HN / 拉长 early stop（我倾向不像主因，你可以反对）
+3. 用恰好 6 条编号共识回复，每条一行。最后一条必须是下一实验的：改什么、固定什么、成功/失败怎么读。
+4. 不要让我同时改两个东西。CLIP 数字继续禁止进 Table 1。
