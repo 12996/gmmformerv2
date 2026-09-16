@@ -1,0 +1,9 @@
+不预设修投影后必超 78.2：ProPy 的 55.4 仅是他人设定下的反例和风险提示，不是我们 Charades CLIP-B/32 的性能上限。
+
+超过原论文数字必须披露配置差异：同时标明视觉与文本特征，明确 CLIP 与 I3D＋RoBERTa 的区别；不得回填为 Table 1 的 I3D 同设定结果，也不自动等于超过当前 SOTA。
+
+老师 ActivityNet 197.1 的证据范围不扩大：它支持该 ActivityNet CLIP-L/14 配置可以超过原论文 I3D 数字，不外推至 Charades，也不保证 CLIP-B/32 的表现。
+
+本轮只做 E2-0，不开训：先确认视觉与文本的配套 checkpoint、tokenizer、video ID 对应及 mask 无误；在同模型、FP32、eval 模式下，将手工计算的 ln_final[EOT] @ text_projection 与标准 encode_text 输出分别归一化，要求逐条查询余弦 ≥0.9999，且无零向量或非有限值；来源未确认或自检不达标，均不得放行。
+
+冻结检索与 E2 放行标准预先固定：mean-video、max-frame 均计算 SumR=R@1+R@5+R@10+R@100，使用同一组 1,000 次 video-ID 成组置乱（同视频查询同步）；各自计算 p=(1+置乱SumR≥实测SumR的次数)/1001，至少一项 p≤0.005 才通过检索门槛（两项检验校正），均不满足则停止、不开训；仅第 4 条核查、自检和本条检验全部通过，才允许下一轮进入 E2，且 只给原 token 序列补投影，保留已修 TC、损失、其余训练设置及 seed 9527，不改成单个 EOT 输入。
