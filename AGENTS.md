@@ -29,7 +29,7 @@ Whenever a train job is **launched**, **reported as running**, or the user asks 
 - The handle must be an exact command they can run on the train host (SSH alias + full path). Prefer `tail -f` on the logger `log.txt`, plus a `grep -E 'epoch:|Rsum:|Best:|Early Stop'` one-liner for metrics.
 - Do **not** use `tail` on `stdout.log` / tqdm as the primary handle. Teacher code prints tensor `shape:` on every step; tqdm uses `\r`, so `tail -n` shows debug lines and hides the bar.
 - Also give: host, GPU, pid if known, and the `PRVR_ROOT` / run directory. If the job has already stopped, say so and still give the same `log.txt` path so they can read Best / Early Stop.
-- Put the live handle into `experiments/工作状态.md` when the run starts so the next session does not have to rediscover it.
+- **Append** the live handle into a new dated section of `experiments/工作状态.md` when the run starts. Do not overwrite older sections; the next session reads the last section.
 
 Example (GMMFormer v2 on `5090_1`):
 
@@ -47,7 +47,7 @@ There are multiple lab GPUs (`5090` = 202.207.1.22 / ZRS-326V2; `5090_1` = 202.2
 - Never track: `vendor/`, conda/env, large h5/ckpt, secrets, SSH passwords. Mirror vendor patches as **scripts in `experiments/`**, not as copies of the whole tree.
 - Do not treat a server home/`/data` tree as backup. After a server run, copy numbers and tiny logs into `experiments/` and commit; leave weights/data on the server.
 - Do not `git push` unless the user asks. Do not amend. Do not revert unrelated dirty files. Leave unrelated skill/`README` edits unstaged.
-- Before sleeping or switching hosts: update `工作状态.md`, commit the log snapshot, note which host/path the next train should use.
+- Before sleeping or switching hosts: **append** a dated section to `工作状态.md` (never replace the whole file), commit, note which host/path the next train should use. Older sections stay as a diary.
 
 ## Scope and safety
 
