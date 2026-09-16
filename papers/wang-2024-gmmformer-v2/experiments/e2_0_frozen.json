@@ -1,0 +1,75 @@
+{
+  "clip_checkpoint": {
+    "identified": false,
+    "assumption": true,
+    "library": "open_clip",
+    "model": "ViT-B-32",
+    "pretrained": "openai",
+    "pretrained_used": "/data/zhaopu/wang-2024-gmmformer-v2/.cache/clip/ViT-B-32.pt",
+    "local_pt": "/data/zhaopu/wang-2024-gmmformer-v2/.cache/clip/ViT-B-32.pt",
+    "precision": "fp32",
+    "device": "cpu",
+    "notes": "5090_1 无 /home/zhaopu/wang-2024-gmmformer-v2/data/a3prvr；A3PRVR README/code 仅写 CLIP-B/32 与 Radford et al. 2021，无权重 hash。按闸门默认 open_clip ViT-B-32 / openai。"
+  },
+  "data": {
+    "captions": "/data/zhaopu/wang-2024-gmmformer-v2/data/prvr/charades/TextData/charadesval.caption.txt",
+    "visual_h5": "/data/zhaopu/wang-2024-gmmformer-v2/data/prvr/charades/FeatureData/charades_clip_L14.h5",
+    "n_queries": 3720,
+    "n_gallery": 1334,
+    "visual_dim": 512,
+    "visual_n_keys": 6672,
+    "frame_len_min": 22,
+    "frame_len_median": 92,
+    "frame_len_max": 217
+  },
+  "encode_text_gate": {
+    "n": 3720,
+    "min_cosine": 0.9999996423721313,
+    "mean_cosine": 1.0,
+    "n_below_0.9999": 0,
+    "n_nan": 0,
+    "n_zero": 0,
+    "pass": true
+  },
+  "retrieval": {
+    "n_queries": 3720,
+    "n_gallery": 1334,
+    "n_shuffles": 1000,
+    "shuffle_seed": 9527,
+    "mean_video": {
+      "R@1": 0.7526881720430108,
+      "R@5": 3.978494623655914,
+      "R@10": 7.016129032258064,
+      "R@100": 30.02688172043011,
+      "SumR": 41.7741935483871,
+      "p": 0.000999000999000999,
+      "n_ge": 0,
+      "shuffle_mean_SumR": 8.694946236559138,
+      "shuffle_max_SumR": 10.806451612903224,
+      "shuffle_min_SumR": 6.290322580645161,
+      "pos_cosine_mean": 0.2691320478916168,
+      "all_pair_cosine_mean": 0.2531401813030243
+    },
+    "max_frame": {
+      "R@1": 1.2365591397849462,
+      "R@5": 5.161290322580645,
+      "R@10": 8.440860215053764,
+      "R@100": 36.20967741935484,
+      "SumR": 51.04838709677419,
+      "p": 0.000999000999000999,
+      "n_ge": 0,
+      "shuffle_mean_SumR": 8.687930107526881,
+      "shuffle_max_SumR": 11.236559139784944,
+      "shuffle_min_SumR": 6.424731182795699,
+      "pos_cosine_mean": 0.2868398129940033,
+      "all_pair_cosine_mean": 0.267926961183548
+    }
+  },
+  "gates": {
+    "encode_text": true,
+    "frozen_retrieval": true,
+    "e2_0_pass": true,
+    "e2_train_allowed": true
+  },
+  "seconds": 182.14588069915771
+}
