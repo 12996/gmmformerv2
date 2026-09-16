@@ -21,6 +21,22 @@ After a GPT-6 (ChatGPT 6 Pro) discussion that picks the next fork:
 
 Do not change more than one variable per entry. Keep claims tied to numbers; this log is not a notes vault.
 
+## Training status handle
+
+Whenever a train job is **launched**, **reported as running**, or the user asks how it is going, give a copy-paste **抓手** in the same reply. Do not wait for them to ask, and do not point them at a noisy file.
+
+- The handle must be an exact command they can run on the train host (SSH alias + full path). Prefer `tail -f` on the logger `log.txt`, plus a `grep -E 'epoch:|Rsum:|Best:|Early Stop'` one-liner for metrics.
+- Do **not** use `tail` on `stdout.log` / tqdm as the primary handle. Teacher code prints tensor `shape:` on every step; tqdm uses `\r`, so `tail -n` shows debug lines and hides the bar.
+- Also give: host, GPU, pid if known, and the `PRVR_ROOT` / run directory. If the job has already stopped, say so and still give the same `log.txt` path so they can read Best / Early Stop.
+- Put the live handle into `experiments/工作状态.md` when the run starts so the next session does not have to rediscover it.
+
+Example (GMMFormer v2 on `5090_1`):
+
+```bash
+tail -f /data/zhaopu/wang-2024-gmmformer-v2/tmp/<run>/results/charades/gmmformer_v2/log.txt
+grep -E 'epoch:|Rsum:|Best:|Early Stop' /data/zhaopu/wang-2024-gmmformer-v2/tmp/<run>/results/charades/gmmformer_v2/log.txt | tail -n 20
+```
+
 ## Git (local is canonical)
 
 There are multiple lab GPUs (`5090` = 202.207.1.22 / ZRS-326V2; `5090_1` = 202.207.1.21 / P6X8G). Servers are compute only. **This repo on the laptop (`F:\论文`) is the project of record** so work can move between machines.
