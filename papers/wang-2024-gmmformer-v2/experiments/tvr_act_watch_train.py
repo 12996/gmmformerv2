@@ -84,6 +84,33 @@ def ensure_local_jobs() -> None:
             stdout=open(HERE / "tvr_upload_resume.log", "a", encoding="utf-8"),
             stderr=subprocess.STDOUT,
         )
+    act_chunks = (ACT_EXPECT + 8 * 1024 * 1024 - 1) // (8 * 1024 * 1024)
+    if parts_done(LOCAL_TVR) >= TVR_CHUNKS and parts_done(LOCAL_ACT) < act_chunks and not proc_running("gdrive_parallel_download.py"):
+        log("ACT_DOWNLOAD_START after TVR")
+        env = os.environ.copy()
+        env["HTTPS_PROXY"] = "http://127.0.0.1:7897"
+        env["HTTP_PROXY"] = env["HTTPS_PROXY"]
+        env["https_proxy"] = env["HTTPS_PROXY"]
+        env["http_proxy"] = env["HTTPS_PROXY"]
+        LOCAL_ACT.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.Popen(
+            [
+                os.environ.get("PYTHON", "python"),
+                "-u",
+                str(HERE / "gdrive_parallel_download.py"),
+                "--id",
+                "1frCLujoWK1Aj0xGWfMO0U1qQLUrLvXgy",
+                "--out",
+                str(LOCAL_ACT),
+                "--expect",
+                str(ACT_EXPECT),
+                "--nwork",
+                "8",
+            ],
+            env=env,
+            stdout=open(HERE / "act_download_resume.log", "a", encoding="utf-8"),
+            stderr=subprocess.STDOUT,
+        )
 
 
 def load_state() -> dict:
