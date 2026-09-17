@@ -7,8 +7,8 @@ ACT_BRANCH = """    if collection == 'activitynet' and cfg['visual_feature'] == 
         visual_feat_path = os.path.join(rootpath, collection, 'FeatureData', cfg['visual_feature'])
         visual_feats = BigFile(visual_feat_path)
         cfg['visual_feat_dim'] = visual_feats.ndims
-        if int(cfg.get('q_feat_size', 1024)) == 512:
-            text_feat_path = os.path.join(rootpath, collection, 'TextData', '%s_clip_L14.h5' % collection)
+        if 'i3d_cliptext_e4' in os.environ.get('PRVR_ROOT', ''):
+            text_feat_path = os.path.join(rootpath, collection, 'TextData', '%s_clip_B32_proj.h5' % collection)
         else:
             text_feat_path = os.path.join(rootpath, collection, 'TextData', 'roberta_%s_query_feat.hdf5' % collection)
         video2frames = read_dict(
@@ -17,9 +17,10 @@ ACT_BRANCH = """    if collection == 'activitynet' and cfg['visual_feature'] == 
         test_video2frames = video2frames
         is_clip = False
 
-    el"""
+    elif """
 
 OLD_I3D = "    if cfg['visual_feature'] in ('i3d', 'i3d_rgb_lgi'):"
+NEW_I3D = ACT_BRANCH + "cfg['visual_feature'] in ('i3d', 'i3d_rgb_lgi'):"
 
 RETURN_4 = "    return cfg, train_loader, context_dataloader, query_eval_loader"
 RETURN_6 = """    test_caption_file = os.path.join(rootpath, collection, 'TextData', '%stest.caption.txt' % collection)
@@ -100,30 +101,56 @@ ELSE_SWITCH = """        if int(cfg.get('q_feat_size', 0)) == 512:
 def patch_builder():
     p = ROOT / "Datasets" / "builder.py"
     t = p.read_text()
-    if "collection == 'activitynet' and cfg['visual_feature'] == 'i3d'" in t and "%s_clip_L14.h5" in t.split("activitynet")[1][:800]:
-        print("BUILDER_ACT_ALREADY")
-    elif "collection == 'activitynet' and cfg['visual_feature'] == 'i3d'" in t:
-        old_act = (
-            "        text_feat_path = os.path.join(rootpath, collection, 'TextData', 'roberta_%s_query_feat.hdf5' % collection)\n"
-            "        video2frames = read_dict(\n"
-            "            os.path.join(rootpath, collection, 'FeatureData', cfg['visual_feature'], 'video2frames.txt'))"
-        )
-        # only replace the first occurrence after the activitynet i3d branch
-        idx = t.find("collection == 'activitynet' and cfg['visual_feature'] == 'i3d'")
-        if idx < 0 or old_act not in t[idx : idx + 900]:
-            print("BUILDER_ACT_KEEP")
+    broken = "el    if cfg['visual_feature'] in ('i3d', 'i3d_rgb_lgi'):"
+    if broken in t:
+        bak = ROOT / "Datasets" / "builder.py.bak_t1act_20260917"
+        if not bak.is_file():
+            raise SystemExit("BUILDER_BROKEN_NO_BAK")
+        t = bak.read_text()
+        if broken in t:
+            raise SystemExit("BUILDER_BAK_ALSO_BROKEN")
+        print("BUILDER_RESTORED_FROM_BAK")
+    act_idx = t.find("collection == 'activitynet' and cfg['visual_feature'] == 'i3d'")
+    if act_idx >= 0:
+        act_block = t[act_idx : act_idx + 1100]
+        if "clip_B32_proj.h5" in act_block and "i3d_cliptext_e4" in act_block:
+            print("BUILDER_ACT_ALREADY")
         else:
-            t = t[:idx] + t[idx:].replace(old_act, ELSE_SWITCH.lstrip(), 1)
-            print("BUILDER_ACT_TEXT_SWITCH")
+            old_l14 = (
+                "        if int(cfg.get('q_feat_size', 1024)) == 512:\n"
+                "            text_feat_path = os.path.join(rootpath, collection, 'TextData', '%s_clip_L14.h5' % collection)\n"
+                "        else:\n"
+                "            text_feat_path = os.path.join(rootpath, collection, 'TextData', 'roberta_%s_query_feat.hdf5' % collection)\n"
+            )
+            old_roberta = (
+                "        text_feat_path = os.path.join(rootpath, collection, 'TextData', 'roberta_%s_query_feat.hdf5' % collection)\n"
+            )
+            new_text = (
+                "        if 'i3d_cliptext_e4' in os.environ.get('PRVR_ROOT', ''):\n"
+                "            text_feat_path = os.path.join(rootpath, collection, 'TextData', '%s_clip_B32_proj.h5' % collection)\n"
+                "        else:\n"
+                "            text_feat_path = os.path.join(rootpath, collection, 'TextData', 'roberta_%s_query_feat.hdf5' % collection)\n"
+            )
+            head, tail = t[:act_idx], t[act_idx:]
+            if old_l14 in tail[:1100]:
+                t = head + tail.replace(old_l14, new_text, 1)
+                print("BUILDER_ACT_TEXT_B32")
+            elif old_roberta in tail[:1100]:
+                t = head + tail.replace(old_roberta, new_text, 1)
+                print("BUILDER_ACT_TEXT_B32")
+            else:
+                print("BUILDER_ACT_KEEP")
     elif OLD_I3D not in t:
         raise SystemExit("BUILDER_FAIL: i3d h5 branch not found")
     else:
-        t = t.replace(OLD_I3D, ACT_BRANCH + OLD_I3D, 1)
+        t = t.replace(OLD_I3D, NEW_I3D, 1)
         print("BUILDER_ACT_OK")
-    if "int(cfg.get('q_feat_size', 0)) == 512" in t and "else:\n        visual_feat_path" in t:
+    # Do not rewrite the generic BigFile else-branch: TVR already switches on PRVR_ROOT.
+    if "i3d_cliptext_e4" in t and "clip_B32_proj.h5" in t:
+        print("BUILDER_ELSE_SWITCH_SKIP_TVR")
+    elif "int(cfg.get('q_feat_size', 0)) == 512" in t and "else:\n        visual_feat_path" in t:
         print("BUILDER_ELSE_SWITCH_ALREADY")
     elif ELSE_ROBERTA in t:
-        # replace only the else-BigFile copy (second roberta+video2frames if act branch already has switch)
         t = t.replace(ELSE_ROBERTA, ELSE_SWITCH, 1)
         print("BUILDER_ELSE_SWITCH_OK")
     else:
