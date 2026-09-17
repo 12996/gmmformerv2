@@ -4,11 +4,20 @@ This repository is a reproduction-to-adaptation workbench. Keep paper artifacts,
 
 ## Instruction precedence
 
-Follow (highest first): system/developer/user request → this file → nearest nested `AGENTS.md` → the selected skill's `SKILL.md` → repository docs/code. If evidence conflicts, trust runtime output, then captured requests, then source.
+Follow (highest first): system/developer/user request → this file → `error.md/` → nearest nested `AGENTS.md` → the selected skill's `SKILL.md` → repository docs/code. If evidence conflicts, trust runtime output, then captured requests, then source.
 
 ## Canonical workflow
 
 `intake → setup → verify → adapt → line` (details: `WORKFLOW.md`). A stage may run only when its prerequisite artifact exists. Move `PAPER.md` **Status** forward only; record failures instead of bypassing gates.
+
+## error.md (what it is for)
+
+`error.md/` is a **folder of binding corrections** from failures the user already called out. It is not a notes vault and not a substitute for `方向探索日志.md`.
+
+- **Read every file in `error.md/` before acting.** Those rules stay in force on later turns even if this chat is compacted.
+- **Add a new file** when the user points out a process error (missed `blocked`, wrong 抓手, overwrote `工作状态.md`, and so on). One constraint per file. Update `error.md/README.md` index.
+- Experiment numbers and forks still go in `papers/<slug>/experiments/`. Only the *rule* goes in `error.md/`.
+- Current index: `error.md/blocked-must-report.md` — no data / no process / GPUs full must be reported as `blocked` in the same reply.
 
 ## Direction exploration
 
@@ -74,10 +83,10 @@ Paper SOPs and tools live only under `.agents/skills/<name>/`. Use the matching 
 
 ## Layout and naming
 
-`papers/<slug>/` contains `PAPER.md`, optional `SETUP.md`, `VERIFY.md`, `ADAPT.md`, and `experiments/` (including `方向探索日志.md` when a GPT-6 fork is running); official code is `vendor/` (gitignored). User tasks are `problems/<name>.md`; research lines are `lines/<theme>/LINE.md`; later prose goes in `outputs/`.
+`papers/<slug>/` contains `PAPER.md`, optional `SETUP.md`, `VERIFY.md`, `ADAPT.md`, and `experiments/` (including `方向探索日志.md` when a GPT-6 fork is running); official code is `vendor/` (gitignored). User tasks are `problems/<name>.md`; research lines are `lines/<theme>/LINE.md`; later prose goes in `outputs/`. Lab-wide failure rules live in the folder `error.md/` (see section **error.md** above).
 
 Slug format: `firstauthor-year-shorttitle` (lowercase kebab-case). Reuse an existing slug.
 
 ## Completion standard
 
-Every run ends with: files changed, command(s) run, result (`pass`/`fail`/`blocked`), evidence paths, and the next valid stage. Keep claims proportional to measured evidence; mark incomparable metrics explicitly.
+Every run ends with: files changed, command(s) run, result (`pass`/`fail`/`blocked`), evidence paths, and the next valid stage. Keep claims proportional to measured evidence; mark incomparable metrics explicitly. If the job never started, the result is **`blocked` in that reply** (`error.md/blocked-must-report.md`), not silence until the user asks.
