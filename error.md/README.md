@@ -12,3 +12,4 @@ Index:
 | file | constraint |
 |---|---|
 | `blocked-must-report.md` | No data / no process / GPUs full → say `blocked` in the same reply; do not wait for the user to ask |
+| `parent-spawns-subagent.md` | Parent plans and reports; long jobs (download/train) go to a subagent, not the parent |
