@@ -6,17 +6,21 @@ respawned until every chunk is on disk. Health line every 30s.
 """
 from __future__ import annotations
 
+import http.cookiejar
 import json
 import os
+import re
 import sys
 import threading
 import time
 import urllib.request
 
+FILE_ID = "1RVG3qIy-nf9XdalMw8wpmWNSPcnOAaNK"
 URL = (
     "https://drive.usercontent.google.com/download?"
-    "id=1RVG3qIy-nf9XdalMw8wpmWNSPcnOAaNK&export=download&confirm=t"
+    "id=%s&export=download&confirm=t" % FILE_ID
 )
+URL_LOCK = threading.Lock()
 EXPECT = 17787514489
 CHUNK = 8 * 1024 * 1024
 NWORK = int(os.environ.get("TVR_NWORK", "4"))
@@ -35,11 +39,32 @@ else:
 
 
 def opener():
+    jar = http.cookiejar.CookieJar()
+    handlers = [urllib.request.HTTPCookieProcessor(jar)]
     if PROXY:
-        return urllib.request.build_opener(
-            urllib.request.ProxyHandler({"http": PROXY, "https": PROXY})
-        )
-    return urllib.request.build_opener()
+        handlers.insert(0, urllib.request.ProxyHandler({"http": PROXY, "https": PROXY}))
+    return urllib.request.build_opener(*handlers)
+
+
+def refresh_url(op) -> str:
+    """Drive virus-scan HTML: pull a fresh confirm token. Range requests need it."""
+    global URL
+    landing = "https://drive.google.com/uc?export=download&id=%s" % FILE_ID
+    req = urllib.request.Request(landing, headers={"User-Agent": "Mozilla/5.0"})
+    with op.open(req, timeout=30) as r:
+        html = r.read(200000).decode("utf-8", "replace")
+    m = re.search(r"confirm=([0-9A-Za-z_-]+)", html)
+    confirm = m.group(1) if m else "t"
+    uuid_m = re.search(r"name=\"uuid\"\s+value=\"([^\"]+)\"", html)
+    uuid = uuid_m.group(1) if uuid_m else ""
+    q = "id=%s&export=download&confirm=%s" % (FILE_ID, confirm)
+    if uuid:
+        q += "&uuid=" + uuid
+    new = "https://drive.usercontent.google.com/download?" + q
+    with URL_LOCK:
+        URL = new
+    print("REFRESH_URL confirm=%s uuid=%s" % (confirm, bool(uuid)), flush=True)
+    return new
 
 
 def load_done(path: str) -> set:
@@ -95,8 +120,10 @@ def main() -> int:
         op = opener()
         while not stop.is_set():
             try:
+                with URL_LOCK:
+                    url = URL
                 req = urllib.request.Request(
-                    URL,
+                    url,
                     headers={"User-Agent": "Mozilla/5.0", "Range": "bytes=%s-%s" % (start, end)},
                 )
                 with op.open(req, timeout=90) as r:
@@ -136,12 +163,21 @@ def main() -> int:
                 return
             except Exception as e:
                 msg = str(e)
+                html = "html_not_zip" in msg or "text/html" in msg
                 with lock:
                     if "SSL" in msg or "EOF" in msg:
                         ssl_fail += 1
                     print("RETRY chunk=%s wait=%.0fs %s" % (i, delay, e), flush=True)
+                if html:
+                    try:
+                        refresh_url(op)
+                    except Exception as re:
+                        print("REFRESH_FAIL", re, flush=True)
+                    delay = 8.0
                 time.sleep(delay)
-                delay = min(60.0, delay * 1.7)
+                if not html:
+                    delay = min(60.0, delay * 1.7)
+                op = opener()
 
     def worker() -> None:
         while not stop.is_set():
