@@ -1,0 +1,5 @@
+lr/sft 两刀不是解决 TVR 缺口的有效办法；尚不能证明 CLIP 表征一定弱。512→768 线性层算改结构，不选。
+
+还有一刀：同源 CLIP 抽取，只把全 token 序列改成官方 EOT 单向量（1,512），仍走原 query_input_proj→BertAttention→modular mapping。不要盲换 zip 内 EOT hdf5。
+
+下一实验：父配置原 E4 178.6。只改文本读出为 EOT。lr 3e-4、sft 0.09、结构全不动。S−178.6 为读出收益；约 +0.2 不算明确改善；S≥185.3 只算单 seed 混合线。不进 Table 1。这刀后结束本轮搜索。
