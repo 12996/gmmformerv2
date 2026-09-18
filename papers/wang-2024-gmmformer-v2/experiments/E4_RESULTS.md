@@ -12,4 +12,4 @@ Host: `5090_1` `/data/zhaopu/wang-2024-gmmformer-v2`
 
 TVR E4 used official tvr hparams except `q_feat_size=512` (lr 3e-4, sft 0.09). Charades E4 used cha hparams (lr 2e-4, sft 0.6).
 
-Follow-up (in progress, 2026-09-18): TVR E4 **lr 2e-4 only**, `tmp/tvr_i3d_cliptext_e4_lr2e-4_seed9527`. At ~3h Best SumR **173.2** (still running; not a final number).
+Follow-up TVR E4 **lr 2e-4 only** (`tmp/tvr_i3d_cliptext_e4_lr2e-4_seed9527`): Best epoch 76 **13.7 / 33.5 / 44.8 / 84.3 / SumR 176.3**. Early Stop 87. **No gain** vs original E4 178.6.

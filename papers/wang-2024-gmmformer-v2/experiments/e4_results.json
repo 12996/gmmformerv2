@@ -25,8 +25,11 @@
   ],
   "followup_tvr_lr_2e-4": {
     "prvr_root": "tmp/tvr_i3d_cliptext_e4_lr2e-4_seed9527",
-    "status": "running",
-    "best_SumR_snapshot": 173.2,
-    "note": "not final"
+    "status": "early_stop",
+    "best_epoch": 76,
+    "stop_epoch": 87,
+    "R@1": 13.7, "R@5": 33.5, "R@10": 44.8, "R@100": 84.3, "SumR": 176.3,
+    "vs_e4": -2.3,
+    "note": "no gain vs original E4 178.6"
   }
 }
