@@ -31,5 +31,16 @@
     "R@1": 13.7, "R@5": 33.5, "R@10": 44.8, "R@100": 84.3, "SumR": 176.3,
     "vs_e4": -2.3,
     "note": "no gain vs original E4 178.6"
+  },
+  "followup_tvr_sft_0.6": {
+    "prvr_root": "tmp/tvr_i3d_cliptext_e4_sft06_seed9527",
+    "status": "finished_100_epoch",
+    "best_epoch": 99,
+    "R@1": 14.2, "R@5": 34.4, "R@10": 45.6, "R@100": 84.6, "SumR": 178.8,
+    "vs_e4": 0.2,
+    "vs_i3d": -6.5,
+    "lr": 0.0003,
+    "sft_factor": 0.6,
+    "note": "tiny gain vs original E4; hparam search closed"
   }
 }
