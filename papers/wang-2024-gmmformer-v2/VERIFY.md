@@ -8,7 +8,11 @@
 | T1-cha | R@100 | 53.2 | 53.0 | -0.2 | close | same |
 | T1-cha | SumR | 78.2 | 78.4 | +0.2 | close | same |
 | T1-cha (mean-bugged) | SumR | 78.2 | 73.5 | -4.7 | no | same hparams, `DyGMMBlock` mean overwrite still on |
-| T1-act | R@1/5/10/100 / SumR | 8.9 / 27.1 / 40.2 / 78.7 / 154.9 | pending | — | skipped | not run yet; same TC-fixed method as E1 |
+| T1-act | R@1 | 8.9 | 9.2 | +0.3 | close | `python main.py -d act --gpu 5` seed 9527 I3D+RoBERTa, TC-fixed |
+| T1-act | R@5 | 27.1 | 27.3 | +0.2 | close | same |
+| T1-act | R@10 | 40.2 | 39.8 | -0.4 | close | same |
+| T1-act | R@100 | 78.7 | 78.7 | 0 | yes | same |
+| T1-act | SumR | 154.9 | 155.0 | +0.1 | close | Best epoch 87, Early Stop 98, `--eval best.ckpt` same |
 | T1-tvr | R@1 | 16.2 | 15.3 | -0.9 | close | `python main.py -d tvr --gpu 6` seed 9527 I3D+ResNet+RoBERTa, TC-fixed, 100 epoch no ES |
 | T1-tvr | R@5 | 37.6 | 36.0 | -1.6 | close | same |
 | T1-tvr | R@10 | 48.8 | 47.6 | -1.2 | close | same |
@@ -30,5 +34,6 @@ CLIP run (wrong features) was Rsum 9.6 and is not comparable.
 - Visual is still A3PRVR `i3d_feat`, text is HuggingFace `roberta-large`, not the MS-SL release files. E1 shows this feature pair can reach paper SumR; it does not prove numerical identity with `i3d_rgb_lgi` + `roberta_charades_query_feat.hdf5`.
 - Single seed. Epoch 0 had a brief duplicate process on GPU 4 (killed).
 - T1-tvr MS-SL I3D+ResNet + RoBERTa, seed 9527, 100 epoch (no Early Stop). Best 15.3/36.0/47.6/86.4 / SumR **185.3** vs paper **189.1** (−3.8). R@100 matched. Evidence: `tmp/tvr_i3d_seed9527/results/tvr/gmmformer_v2/log.txt`.
-- T1-act still training (2026-09-18).
+- T1-act MS-SL I3D+RoBERTa, seed 9527. Best **9.2 / 27.3 / 39.8 / 78.7 / SumR 155.0** vs paper **154.9** (+0.1). Early Stop epoch 98. Evidence: `tmp/act_i3d_seed9527/results/activitynet/gmmformer_v2/log.txt`.
+- Act E4 (I3D vis + CLIP text) Best SumR **155.2** is comparison only, **not** Table 1.
 - TVR E4 (I3D vis + CLIP text) Best SumR **178.6** is a comparison run, **not** Table 1.
