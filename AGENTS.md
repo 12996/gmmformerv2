@@ -55,7 +55,7 @@ There are multiple lab GPUs (`5090` = 202.207.1.22 / ZRS-326V2; `5090_1` = 202.2
 - Always track: `PAPER.md` / `SETUP.md` / `VERIFY.md` / `ADAPT.md`, `experiments/方向探索日志.md`, `experiments/工作状态.md`, extract/patch/launch scripts, metric JSON that fits in git.
 - Never track: `vendor/`, conda/env, large h5/ckpt, secrets, SSH passwords. Mirror vendor patches as **scripts in `experiments/`**, not as copies of the whole tree.
 - Do not treat a server home/`/data` tree as backup. After a server run, copy numbers and tiny logs into `experiments/` and commit; leave weights/data on the server.
-- Do not `git push` unless the user asks. Do not amend. Do not revert unrelated dirty files. Leave unrelated skill/`README` edits unstaged.
+- Do not `git push` unless the user asks. **If they want a remote (GitHub/Gitee/GitLab), ask them for the repository URL** (HTTPS or SSH) before `git remote add` / `git push`. Until they give a URL, only commit on the laptop. Do not amend. Do not revert unrelated dirty files. Leave unrelated skill/`README` edits unstaged.
 - Before sleeping or switching hosts: **append** a dated section to `工作状态.md` (never replace the whole file), commit, note which host/path the next train should use. Older sections stay as a diary.
 
 ## Scope and safety

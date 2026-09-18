@@ -1,0 +1,32 @@
+{
+  "protocol": "E4 I3D visual + CLIP-B/32 projected token text, TC-fixed GMMFormer v2, seed 9527",
+  "table1": false,
+  "host": "5090_1",
+  "runs": [
+    {
+      "dataset": "charades",
+      "prvr_root": "tmp/i3d_cliptext_e4_seed9527",
+      "R@1": 2.4, "R@5": 9.3, "R@10": 15.5, "R@100": 52.8, "SumR": 80.1,
+      "i3d_roberta_ours": 78.4, "paper": 78.2
+    },
+    {
+      "dataset": "activitynet",
+      "prvr_root": "tmp/act_i3d_cliptext_e4_seed9527",
+      "R@1": 9.0, "R@5": 27.6, "R@10": 40.2, "R@100": 78.4, "SumR": 155.2,
+      "i3d_roberta_ours": 155.0, "paper": 154.9
+    },
+    {
+      "dataset": "tvr",
+      "prvr_root": "tmp/tvr_i3d_cliptext_e4_seed9527",
+      "R@1": 14.6, "R@5": 34.4, "R@10": 45.7, "R@100": 83.9, "SumR": 178.6,
+      "i3d_roberta_ours": 185.3, "paper": 189.1,
+      "lr": 0.0003, "sft_factor": 0.09
+    }
+  ],
+  "followup_tvr_lr_2e-4": {
+    "prvr_root": "tmp/tvr_i3d_cliptext_e4_lr2e-4_seed9527",
+    "status": "running",
+    "best_SumR_snapshot": 173.2,
+    "note": "not final"
+  }
+}
