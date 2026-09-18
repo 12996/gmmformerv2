@@ -1,0 +1,17 @@
+TVR 上 E4（I3D vis + CLIP-B/32 投影 token 文本）Best SumR **178.6**，低于同设定 I3D+RoBERTa **185.3**（论文 Table 1 **189.1**）。用户问：还有没有进步空间；**可以调超参，禁止改模型结构**（不动 DyGMMBlock/TC、hidden 384、双分支 32/128、0.7/0.3、GMMFormerV2_Net）。一次只锁一个变量。CLIP 分不进 Table 1。
+
+## 三套数据上 E4 vs I3D+RoBERTa
+- Charades：E4 **80.1** > I3D **78.4**（论文 78.2）
+- ActivityNet：E4 **155.2** ≈ I3D **155.0**（论文 154.9）
+- TVR：E4 **178.6** < I3D **185.3**（论文 189.1）差 6.7
+
+## TVR E4 当时用的超参（官方 tvr.py + 只改文本 dim）
+sft_factor=0.09，lr=3e-4，margin=0.1，drop/input_drop=0.2，loss_factor=[0.05,0.04,8e-5,0.09]，neg_factor=[0.15,32,1]，q_feat_size=512（CLIP 序列），visual i3d_resnet 3072-d，seed 9527，batch 128，HN≥20，max_es_cnt=10，n_epoch=100。文本是 caption 现抽 token@text_projection，没用 zip 里 EOT 单向量 hdf5。
+
+## Charades E4（涨分那次）超参差异
+lr=2e-4，sft_factor=0.6，margin=0.2，drop=0.25，loss_factor=[0.02,0.04,0.003,0.1]，neg_factor=[0.2,32,1]。结构相同。
+
+## 请你做
+1. TVR E4 低 6.7 更像：CLIP 文本与 TVR 官方损失/sft/lr 不匹配，还是文本表征本身弱、调超参也补不回？
+2. 只锁 **一个** 超参实验（改哪一项、固定其余、S 怎么读：相对 178.6 和 185.3）。候选请排序后只选一个：lr 3e-4→2e-4；sft_factor 0.09→0.6；loss_factor 换成 Charades 那组；其它必须点名且仍是单变量。禁止改结构、禁止同时改 lr 和 sft。
+3. 恰好 5 条编号共识，每条一行。最后一条是下一动作。
