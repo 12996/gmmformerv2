@@ -15,3 +15,5 @@ TVR E4 used official tvr hparams except `q_feat_size=512` (lr 3e-4, sft 0.09). C
 Follow-up TVR E4 **lr 2e-4 only** (`tmp/tvr_i3d_cliptext_e4_lr2e-4_seed9527`): Best epoch 76 **13.7 / 33.5 / 44.8 / 84.3 / SumR 176.3**. Early Stop 87. **No gain** vs original E4 178.6.
 
 Follow-up TVR E4 **sft_factor 0.6**, lr 3e-4 (`tmp/tvr_i3d_cliptext_e4_sft06_seed9527`): Best epoch 99 **14.2 / 34.4 / 45.6 / 84.6 / SumR 178.8**. +0.2 vs original E4 178.6; still −6.5 vs I3D 185.3. Hparam search closed per GPT-6.
+
+Follow-up TVR E4 **EOT readout** (`tmp/tvr_i3d_cliptext_e4_eot_seed9527`): Best **11.8 / 29.8 / 40.8 / 82.9 / SumR 165.3**. −13.3 vs token-sequence E4 178.6. Search closed.
