@@ -1,0 +1,15 @@
+用户放权：可以改 GMMFormer 结构。E4 代码与目录已冻结，不得覆盖 tmp/tvr_i3d_cliptext_e4_seed9527（178.6）及 e4_freeze/ 脚本。CLIP 不进 Table 1。一次只锁一个结构改动。
+
+## TVR 现状
+- I3D+RoBERTa 185.3（论文 189.1）
+- E4 token 序列 178.6；sft0.6 178.8；lr2e-4 176.3；EOT 165.3
+- 不改结构的搜索已按你上次共识关闭。
+
+## 代码约束（我们实际跑的）
+GMMFormerV2_Net：query_input_proj 把 q_feat_size(512) 映到 hidden 384，再 BertAttention + modular_vector_mapping。视觉 I3D+ResNet 3072→384，DyGMMBlock 32/128，融合 0.7/0.3。TC 已是官方加权 sum。
+
+## 请你做
+1. 只锁一个结构实验，必须能单独检验「为何 TVR 上 CLIP 查询亏 6.5」。
+2. 候选请排序后选一个：query 侧加可训练 Linear(512,768) 再进原 proj；去掉/绕过 BertAttention 只对 CLIP token 做 CLIP 式池化；RoBERTa+CLIP 双查询融合（若你认为这是两个变量就不要选）；其它你点名。
+3. 固定：I3D 视觉、CLIP token 序列 h5、seed 9527、lr 3e-4、sft 0.09、损失、batch 128、早停、100 epoch。新 tmp 目录。
+4. 恰好 5 条编号。最后一条：改哪个文件/模块、S 怎么读（相对 178.6 和 185.3）。禁止同时改两项。
