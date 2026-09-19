@@ -17,3 +17,5 @@ Follow-up TVR E4 **lr 2e-4 only** (`tmp/tvr_i3d_cliptext_e4_lr2e-4_seed9527`): B
 Follow-up TVR E4 **sft_factor 0.6**, lr 3e-4 (`tmp/tvr_i3d_cliptext_e4_sft06_seed9527`): Best epoch 99 **14.2 / 34.4 / 45.6 / 84.6 / SumR 178.8**. +0.2 vs original E4 178.6; still −6.5 vs I3D 185.3. Hparam search closed per GPT-6.
 
 Follow-up TVR E4 **EOT readout** (`tmp/tvr_i3d_cliptext_e4_eot_seed9527`): Best **11.8 / 29.8 / 40.8 / 82.9 / SumR 165.3**. −13.3 vs token-sequence E4 178.6. Search closed.
+
+Structure TVR **bypass query BertAttention** (`tmp/tvr_i3d_cliptext_qbert_bypass_seed9527`): Best epoch 75 **13.6 / 33.3 / 44.4 / 83.5 / SumR 174.7**. Early Stop 86. −3.9 vs E4 178.6. Bypass no gain.
