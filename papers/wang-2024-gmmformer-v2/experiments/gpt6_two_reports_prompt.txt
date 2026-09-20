@@ -1,0 +1,18 @@
+请先阅读论文 PDF：https://arxiv.org/pdf/2405.13824v1 （GMMFormer v2, arXiv 2405.13824）。然后只根据下面实测写 **两份独立的中文 Markdown 实验报告**，用二级标题分开：`## 报告一：官方协议复现` 和 `## 报告二：E4 查询替换为 CLIP`。不要发明没测过的数字。单 seed 9527。CLIP/混合结果禁止写进论文 Table 1。不要宣称 SOTA。不要展开新文献。
+
+主机 5090_1。官方命令 python main.py -d {cha,act,tvr}。老师 zip 曾用 mean 覆盖 DyGMMBlock 官方加权 sum；删掉后 Charades 73.5→78.4。后续均已修 TC。
+
+## 报告一要用的复现数字（I3D+RoBERTa = Table 1）
+- Charades 论文 2.5/8.6/13.9/53.2 / SumR 78.2；我们 2.4/8.8/14.2/53.0 / **78.4**（E1，tmp/i3d_tc_seed9527）
+- ActivityNet 论文 8.9/27.1/40.2/78.7 / 154.9；我们 9.2/27.3/39.8/78.7 / **155.0**（Early Stop 98）
+- TVR 论文 16.2/37.6/48.8/86.4 / 189.1；我们 15.3/36.0/47.6/86.4 / **185.3**（满 100 epoch；resume 到 200 未超过 185.3）
+TVR/Act 特征来自 MS-SL 官方 zip/tar。Charades I3D 来自 A3PRVR i3d_feat + 自抽 RoBERTa。
+
+## 报告二要用的 E4 数字（I3D 视觉不变，查询换成 CLIP-B/32 token 序列 ln_final@text_projection）
+结构与论文相同（已修 TC），只换查询特征。另表。
+- Charades E4 **80.1**（2.4/9.3/15.5/52.8）vs I3D 78.4
+- Act E4 **155.2**（9.0/27.6/40.2/78.4）vs I3D 155.0
+- TVR E4 **178.6**（14.6/34.4/45.7/83.9）vs I3D 185.3
+TVR 后续（一次一变量）：lr2e-4→176.3；sft0.6→178.8；EOT→165.3；旁路 query BertAttention→174.7。代码冻在 e4_freeze/。
+
+每份报告包含：目的、设定、表格、结论与局限。报告一聚焦能否复现 Table 1。报告二聚焦「查询 RoBERTa→CLIP」是否成立及数据集依赖。
