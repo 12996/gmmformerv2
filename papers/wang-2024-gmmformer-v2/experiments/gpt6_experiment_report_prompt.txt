@@ -1,0 +1,21 @@
+请根据下面的论文与实验记录，写一份中文实验报告（适合放进实验室仓库）。不要发明没测过的数字。CLIP/混合结果禁止写进论文 Table 1。单 seed。不要宣称 SOTA。
+
+论文：GMMFormer v2, arXiv 2405.13824, https://arxiv.org/pdf/2405.13824v1
+任务：PRVR。官方命令 python main.py -d {cha,act,tvr}。特征协议 I3D(+ResNet)/RoBERTa，MS-SL。seed 9527，batch 128，100 epoch，early stop 10。主机 5090_1。
+
+## 复现（Table 1，I3D+RoBERTa）
+老师 zip 的 DyGMMBlock 曾用 mean 覆盖官方加权 sum。删掉后 Charades 73.5→78.4。
+- Charades 论文 2.5/8.6/13.9/53.2 / 78.2；我们 2.4/8.8/14.2/53.0 / **78.4**
+- ActivityNet 论文 8.9/27.1/40.2/78.7 / 154.9；我们 9.2/27.3/39.8/78.7 / **155.0**
+- TVR 论文 16.2/37.6/48.8/86.4 / 189.1；我们 15.3/36.0/47.6/86.4 / **185.3**（满 100 epoch，resume 到 200 未超过 185.3）
+
+## CLIP 对照（另表）
+E2 CLIP vis+CLIP token 投影 Charades **68.0**。E3 CLIP vis+RoBERTa Charades **65.4**。
+E4：I3D 视觉 + CLIP-B/32 token@text_projection 序列，TC 已修。
+- Charades E4 **80.1** vs I3D 78.4
+- Act E4 **155.2** vs I3D 155.0
+- TVR E4 **178.6** vs I3D 185.3
+
+TVR 上接着：lr 2e-4→176.3；sft 0.6→178.8；EOT→165.3；旁路 query BertAttention→174.7。GPT-6 关闭该搜索。E4 代码冻在 experiments/e4_freeze/。
+
+请输出：标题、设定、Table 1 复现、E4 对照、TVR 消融、结论与局限、下一步（可选）。Markdown。
